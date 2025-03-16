@@ -7,11 +7,11 @@ A small Node.js project using Express, CORS, and Axios.
 
 Make sure you have Node.js installed on your machine.If not, download it from the official site: Node.js
 
-Install the required dependencies:
+**Install the required dependencies**:
 
 npm install express cors axios
 
-Start the server:
+**Start the server**:
 
 node server.js
 

@@ -8,36 +8,41 @@ app.use(express.json());
 
 const PORT = 5000;
 
-let favorites = [];  // הגדרת מערך הפייבוריטים
+let favorites = [];  // Defining the favorites array
 
-// שליפת רשימת הפוקימונים
+// Fetching the Pokémon list
 app.get('/api/pokemon', async (req, res) => {
     try {
-        const { name } = req.query; // קבלת השם מהבקשה
-        const response = await axios.get('https://pokeapi.co/api/v2/pokemon?limit=120'); // מביא את כל הפוקימונים
+        const { searchQuery, limit = 10, offset = 0 } = req.query;  // Getting searchQuery, limit, and offset from query params
 
-        let filteredPokemon = response.data.results;
-        if (name) {
-            filteredPokemon = filteredPokemon.filter(pokemon => pokemon.name.includes(name.toLowerCase())); // 🔥 חיפוש לפי חלק מהשם
+        // Constructing the URL with pagination and searchQuery (if present)
+        let url = `https://pokeapi.co/api/v2/pokemon?limit=${limit}&offset=${offset}`;
+        if (searchQuery) {
+            // If a search query is provided, fetch a single Pokémon by name
+            url = `https://pokeapi.co/api/v2/pokemon/${searchQuery}`;
         }
 
+        const response = await axios.get(url);
+
+        let filteredPokemon = response.data.results || [response.data]; // If it's a single Pokémon, wrap it in an array
+
+        // Sending the results back to the client
         res.json({ results: filteredPokemon });
     } catch (error) {
         res.status(500).json({ error: "Error fetching Pokémon" });
     }
 });
 
-
-// שליפת מידע על פוקימון לפי שם
+// Fetching Pokémon details by name
 app.get('/api/pokemon/:name', async (req, res) => {
     const { name } = req.params;
-    console.log(`Searching for Pokémon: ${name}`); // הוסף לוג כדי לבדוק את שם הפוקימון
+    console.log(`Searching for Pokémon: ${name}`); // Adding a log to check the Pokémon name
     try {
         const response = await axios.get(`https://pokeapi.co/api/v2/pokemon/${name}`);
-        const isFavorite = favorites.includes(name); // בדיקה אם הפוקימון נמצא בפייבוריטים
+        const isFavorite = favorites.includes(name); // Checking if the Pokémon is in favorites
         res.json({
             ...response.data,
-            isFavorite: isFavorite // הוספת שדה isFavorite
+            isFavorite: isFavorite // Adding the isFavorite field
         });
     } catch (error) {
         console.error(error);
@@ -45,29 +50,27 @@ app.get('/api/pokemon/:name', async (req, res) => {
     }
 });
 
-
-// שליפת הפייבוריטים
+// Fetching the favorites list
 app.get('/api/favorites', (req, res) => {
-    res.status(200).json(favorites);  // מחזיר את הפייבוריטים
+    res.status(200).json(favorites);  // Returning the favorites list
 });
 
-// הוספת פוקימון לפייבוריטים
+// Adding a Pokémon to favorites
 app.post('/api/favorites', (req, res) => {
     const { pokemon } = req.body;
-    // הוספת הפוקימון למערך הפייבוריטים
+    // Adding the Pokémon to the favorites array
     favorites.push(pokemon);
 
-    // החזרת רשימת הפייבוריטים העדכנית
+    // Returning the updated favorites list
     res.status(200).json(favorites);
 });
 
-// הסרת פוקימון מהפייבוריטים
+// Removing a Pokémon from favorites
 app.delete('/api/favorites/:name', (req, res) => {
     const { name } = req.params;
     favorites = favorites.filter(pokemon => pokemon !== name);
     res.status(200).json(favorites);
 });
-
 
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
